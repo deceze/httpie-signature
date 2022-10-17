@@ -38,7 +38,10 @@ Format:
     [URL]
     key = <key>
     secret = <secret>
-    headers = <String value of headers used in signatur>
+    headers = <String value of headers used in signature>
+    scheme = <signature or authorization>
+
+`scheme` controls whether a `Signature: ...` header will be used (default), or an `Authorization: Signature ...` header.
 
 
 Sample ~/.httpsigrc file
@@ -57,6 +60,7 @@ Sample ~/.httpsigrc file
     secret = ASDOASFKAFasd3rtsfasfWZFAFDWTRWFSGDFSDsds35=
     algorithm = HmacSHA256
     headers = host date (request-target) digest
+    scheme = authorization
 
 
 If your request does not contain a body digest will automatically be removed from the header list.

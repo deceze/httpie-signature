@@ -19,7 +19,7 @@ def get_hmacAlgorithm(algorithm: str):
         "hmacsha512": hashlib.sha512
     }
 
-    return options[algorithm.lower()]
+    return options[algorithm.lower().replace('-', '')]
 
 
 def get_host(uri: str):
@@ -101,5 +101,13 @@ class HttpSignatureAuth(requests.auth.AuthBase):
         encodedSignature = base64.b64encode(hasedSignature.digest()).decode("utf-8")
 
         rawHeaderString.append(", signature=\"" + encodedSignature + "\"")
-        request.headers['Signature'] = f'{"".join(rawHeaderString)}'
+
+        scheme = rc.get('scheme', 'signature').lower()
+        if scheme == 'signature':
+            request.headers['Signature'] = "".join(rawHeaderString)
+        elif scheme == 'authorization':
+            request.headers['Authorization'] = f'Signature {"".join(rawHeaderString)}'
+        else:
+            raise ValueError(f'Scheme must be one of "signature" or "authorization", not {scheme}')
+
         return request
