@@ -8,15 +8,18 @@ import hashlib
 import base64
 import hmac
 
+
 def get_date():
     os.environ["TZ"] = "UTC"
     return datetime.now().strftime("%a, %d %b %Y %H:%M:%S UTC")
+
 
 def get_hmacAlgorithm(algorithm: str):
 
     options = {
         "hmacsha256": hashlib.sha256,
-        "hmacsha512": hashlib.sha512
+        "hmacsha512": hashlib.sha512,
+        "hmacsha1": hashlib.sha1
     }
 
     return options[algorithm.lower().replace('-', '')]
@@ -25,8 +28,16 @@ def get_hmacAlgorithm(algorithm: str):
 def get_host(uri: str):
     return '{uri.netloc}'.format(uri=urlparse(uri))
 
+
 def get_resource(uri: str):
-    return '{uri.path}'.format(uri=urlparse(uri))
+    parts = urlparse(uri)
+    resource = parts.path
+
+    if parts.query:
+        resource += '?' + parts.query
+
+    return resource
+
 
 def get_digest(payload: str):
     hashobj = hashlib.sha256()
@@ -35,6 +46,7 @@ def get_digest(payload: str):
     digest = base64.b64encode(hash_data)
 
     return digest
+
 
 class HttpSignatureAuth(requests.auth.AuthBase):
     def __init__(self):
@@ -69,7 +81,7 @@ class HttpSignatureAuth(requests.auth.AuthBase):
         for header in request.headers:
             headers[header.lower()] = request.headers[header] 
 
-        rawHeaderString.append("keyid=\"" + key + "\"")
+        rawHeaderString.append("keyId=\"" + key + "\"")
         rawHeaderString.append(", algorithm=\"" + algorith + "\"")
         rawHeaderString.append(", headers=\"")
 
@@ -87,13 +99,13 @@ class HttpSignatureAuth(requests.auth.AuthBase):
                 signature.append("(request-target): " + method.lower() + " " + resource)
             elif header != "digest" and header.lower() in headers:
                 headerList.append(header)
-                signature.append(header + ": " + headers[header.lower()].decode("utf-8"))
+                signature.append(header + ": " + headers[header.lower()])
             elif header == "digest" and payload != None:
                 digest = "SHA-256=" + get_digest(payload.decode("utf-8")).decode("utf-8")
                 request.headers["Digest"] = digest
                 headerList.append("digest")
                 signature.append("digest: " + digest)
-        
+
         rawHeaderString.append(" ".join(headerList))
         rawHeaderString.append("\"")
 
